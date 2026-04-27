@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-visual">
 <meta name="theme-color" content="#0f0f0d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -184,6 +184,41 @@
   .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(16px); background:var(--surface); border:1px solid var(--border); border-radius:30px; padding:11px 20px; font-size:13px; color:var(--ivory); opacity:0; transition:all 0.25s; pointer-events:none; white-space:nowrap; z-index:999; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
+
+<script>
+// Fix teclado iOS en modo PWA standalone
+(function() {
+  function fixIOSInput() {
+    if (window.navigator.standalone) {
+      document.addEventListener('touchend', function(e) {
+        const el = e.target;
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          setTimeout(() => {
+            el.focus();
+            // Scroll para que el input quede visible sobre el teclado
+            setTimeout(() => {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+          }, 100);
+        }
+      }, false);
+
+      // Prevenir que el scroll del body bloquee el input
+      document.addEventListener('focusin', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => { document.body.style.overflow = ''; }, 1000);
+        }
+      });
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fixIOSInput);
+  } else {
+    fixIOSInput();
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -691,3 +726,4 @@ function iniciarCountdown(target) {
 </script>
 </body>
 </html>
+
