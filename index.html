@@ -206,7 +206,7 @@
     <input class="field" type="email" id="emailInput" placeholder="tu@email.com" autocomplete="email">
     <button class="btn-primary" onclick="iniciarAcceso()">Ver mi viaje</button>
     <div class="login-status" id="loginStatus"></div>
-    <div class="demo-link"><button onclick="cargarDemo()">Ver demo →</button></div>
+
   </div>
 </div>
 
@@ -307,20 +307,20 @@
         <div><div class="contact-title">WhatsApp</div><div class="contact-sub">Respondemos en minutos</div></div>
         <div class="contact-arrow">→</div>
       </a>
-      <a class="contact-card" id="emailLink" href="mailto:hola@borotravel.com">
+      <a class="contact-card" id="emailLink" href="mailto:bta.viajes@gmail.com">
         <div class="contact-icon">✉️</div>
-        <div><div class="contact-title">Email</div><div class="contact-sub">hola@borotravel.com</div></div>
+        <div><div class="contact-title">Email</div><div class="contact-sub">bta.viajes@gmail.com</div></div>
         <div class="contact-arrow">→</div>
       </a>
-      <a class="contact-card" href="https://instagram.com/borotravel.atelier" target="_blank">
+      <a class="contact-card" href="https://instagram.com/bta.viajes" target="_blank">
         <div class="contact-icon">📷</div>
-        <div><div class="contact-title">Instagram</div><div class="contact-sub">@borotravel.atelier</div></div>
+        <div><div class="contact-title">Instagram</div><div class="contact-sub">@bta.viajes</div></div>
         <div class="contact-arrow">→</div>
       </a>
       <div style="margin-top:24px;padding:24px;background:var(--surface);border-radius:16px;border:1px solid var(--border);text-align:center;">
         <div style="font-family:var(--font-brasika);font-size:24px;color:var(--ivory);margin-bottom:4px;letter-spacing:0.06em;">BORO</div>
         <div style="font-size:10px;letter-spacing:0.16em;color:var(--gold);font-family:var(--font-label);font-weight:300;margin-bottom:10px;">TRAVEL · <span style="font-family:var(--font-script);font-size:14px;letter-spacing:0.04em;text-transform:none;">atelier</span></div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.8;">La Plata, Buenos Aires · Argentina</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8;">Samborombón, Buenos Aires · Argentina</div>
       </div>
     </div>
     <div class="nav-spacer"></div>
@@ -345,8 +345,8 @@
 // CONFIGURACIÓN
 // ══════════════════════════════════
 const CONFIG = {
-  whatsapp: '5492214000000', // ← reemplazá con el número real
-  email: 'hola@borotravel.com',
+  whatsapp: '5492216747958', // ← reemplazá con el número real
+  email: 'bta.viajes@gmail.com',
   notionMcp: 'https://mcp.notion.com/mcp',
   claudeApi: 'https://api.anthropic.com/v1/messages',
   // IDs de bases de datos Notion
@@ -456,6 +456,9 @@ Devolvé SOLAMENTE un array JSON ordenado por "Orden":
 async function iniciarAcceso() {
   const email = document.getElementById('emailInput').value.trim();
   if (!email || !email.includes('@')) { showToast('Ingresá un email válido'); return; }
+
+  // Acceso demo oculto
+  if (email.toLowerCase() === 'demo@borotravel.com') { cargarDemo(); return; }
 
   showLoader('Buscando tu viaje...');
   try {
