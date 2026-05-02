@@ -398,91 +398,30 @@ document.getElementById('waLink').href = `https://wa.me/${CONFIG.whatsapp}`;
 // ══════════════════════════════════
 // NOTION API
 // ══════════════════════════════════
-async function askNotion(prompt) {
-  const res = await fetch(CONFIG.claudeApi, {
+// ── API calls al backend Vercel ──
+async function apiCall(action, payload = {}) {
+  const res = await fetch('/api/notion', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      mcp_servers: [{ type: 'url', url: CONFIG.notionMcp, name: 'notion' }],
-      messages: [{ role: 'user', content: prompt }]
-    })
+    body: JSON.stringify({ action, ...payload })
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-  const clean = text.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, m => m.replace(/```json?|```/g, '')).trim();
-  const match = clean.match(/[\[{][\s\S]*[\]}]/);
-  if (!match) return null;
-  try { return JSON.parse(match[0]); } catch { return null; }
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
 }
 
 async function cargarViajePorEmail(email) {
-  return await askNotion(`
-Buscá en la Notion database "Viajes — PWA" con data source collection://${CONFIG.ds.viajes}
-el registro donde "Email cliente" = "${email}" y "App activa" = verdadero (checked).
-Devolvé SOLAMENTE JSON válido, sin texto adicional antes ni después:
-{
-  "encontrado": true,
-  "id": "page_id",
-  "nombre": "Nombre del viaje",
-  "cliente": "Cliente",
-  "slug": "Slug",
-  "fechaSalida": "YYYY-MM-DD",
-  "fechaRegreso": "YYYY-MM-DD",
-  "aerolinea": "Aerolínea",
-  "vueloIda": "Vuelo de ida",
-  "vueloRegreso": "Vuelo de regreso",
-  "traslados": "Traslados",
-  "ciudadesIds": ["array de page IDs de las ciudades relacionadas"]
-}
-Si no encontrás nada con ese email o App activa = false, devolvé: {"encontrado": false}`);
+  return await apiCall('getViaje', { email });
 }
 
 async function cargarCiudades(ciudadesIds) {
   if (!ciudadesIds?.length) return [];
-  return await askNotion(`
-Buscá en la Notion database "Ciudades — PWA" collection://${CONFIG.ds.ciudades}
-las páginas con estos IDs: ${JSON.stringify(ciudadesIds)}.
-Devolvé SOLAMENTE un array JSON ordenado por el campo numérico "Orden" (de menor a mayor):
-[{
-  "id": "page_id",
-  "ciudad": "Ciudad",
-  "pais": "País",
-  "orden": 1,
-  "hotel": "Hotel",
-  "direccionHotel": "Dirección hotel",
-  "linkMaps": "Link Maps",
-  "checkIn": "Check in",
-  "checkOut": "Check out",
-  "fechaLlegada": "YYYY-MM-DD",
-  "fechaSalida": "YYYY-MM-DD",
-  "vueloIda": "Vuelo ida",
-  "vueloVuelta": "Vuelo vuelta",
-  "horaVueloIda": "Hora vuelo ida",
-  "horaVueloRegreso": "Hora vuelo regreso",
-  "traslados": [],
-  "fotoPortada": "URL o null",
-  "guiaDestino": "URL o null",
-  "vouchersIds": ["IDs de vouchers relacionados"]
-}]`);
+  return await apiCall('getCiudades', { ciudadesIds });
 }
 
 async function cargarVouchers(vouchersIds) {
   if (!vouchersIds?.length) return [];
-  return await askNotion(`
-Buscá en la Notion database "Vouchers — PWA" collection://${CONFIG.ds.vouchers}
-las páginas con estos IDs: ${JSON.stringify(vouchersIds)}.
-Devolvé SOLAMENTE un array JSON ordenado por "Orden":
-[{
-  "id": "page_id",
-  "nombre": "Nombre del voucher",
-  "tipo": "Tipo",
-  "descripcion": "Descripción",
-  "linkVoucher": "Link voucher o null",
-  "orden": 1
-}]`);
+  return await apiCall('getVouchers', { vouchersIds });
 }
 
 // ══════════════════════════════════
