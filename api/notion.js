@@ -1,10 +1,8 @@
 // api/notion.js — Boro Travel Atelier
-// Serverless function para Vercel
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
 
-// IDs correctos de las bases de datos
 const DS = {
   viajes:      '1f3b15ed803344f487af2c9a78f34bc1',
   ciudades:    '8efc1160319945f3a26f3f68169e7e72',
@@ -55,7 +53,7 @@ async function getViajeByEmail(email) {
   const data = await notionRequest(`/databases/${DS.viajes}/query`, 'POST', {
     filter: {
       and: [
-        { property: 'Email cliente', email: { equals: email } },
+        { property: 'Email cliente', email: { equals: email.trim().toLowerCase() } },
         { property: 'App activa', checkbox: { equals: true } },
       ]
     }
@@ -129,25 +127,48 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
   const { action, email, ciudadesIds, vouchersIds } = req.body || {};
+
   try {
     switch (action) {
+
+      // Diagnóstico — verificar token y acceso
+      case 'ping': {
+        const token = process.env.NOTION_TOKEN;
+        const tokenPreview = token ? `${token.substring(0, 10)}...` : 'NO TOKEN';
+        try {
+          const db = await notionRequest(`/databases/${DS.viajes}`);
+          return res.status(200).json({
+            ok: true,
+            tokenPreview,
+            dbTitle: db.title?.[0]?.plain_text || 'sin título',
+            dbId: DS.viajes,
+          });
+        } catch(e) {
+          return res.status(200).json({ ok: false, tokenPreview, error: e.message });
+        }
+      }
+
       case 'getViaje': {
         if (!email) return res.status(400).json({ error: 'Email requerido' });
         const viaje = await getViajeByEmail(email);
         if (!viaje) return res.status(404).json({ error: 'no_encontrado' });
         return res.status(200).json(viaje);
       }
+
       case 'getCiudades': {
         if (!ciudadesIds?.length) return res.status(200).json([]);
         const ciudades = await getCiudades(ciudadesIds);
         return res.status(200).json(ciudades);
       }
+
       case 'getVouchers': {
         if (!vouchersIds?.length) return res.status(200).json([]);
         const vouchers = await getVouchers(vouchersIds);
         return res.status(200).json(vouchers);
       }
+
       default:
         return res.status(400).json({ error: 'Acción no reconocida' });
     }
