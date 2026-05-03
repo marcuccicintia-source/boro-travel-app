@@ -437,7 +437,8 @@ async function iniciarAcceso() {
   showLoader('Buscando tu viaje...');
   try {
     const viaje = await cargarViajePorEmail(email);
-    if (!viaje?.encontrado) {
+    // El backend devuelve el viaje directo (o null si no encontró)
+    if (!viaje || !viaje.nombre) {
       hideLoader();
       mostrarLoginStatus(`No encontramos un viaje activo para <strong>${email}</strong>. Verificá el email o contactanos.`);
       return;
