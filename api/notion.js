@@ -65,7 +65,7 @@ async function getViajeByEmail(email) {
   
   // Buscar el viaje que coincide con el email
   const match = data.results.find(page => {
-    const emailProp = getProp(page.properties, 'Email cliente');
+    const emailProp = getProp(page.properties, 'Email Cliente');
     return emailProp && emailProp.trim().toLowerCase() === emailClean;
   });
 
