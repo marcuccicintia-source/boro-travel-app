@@ -50,19 +50,30 @@ function getProp(props, name) {
 }
 
 async function getViajeByEmail(email) {
+  const emailClean = email.trim().toLowerCase();
+  
+  // Traer todos los viajes con App activa = true
+  // y filtrar por email en el código (más confiable)
   const data = await notionRequest(`/databases/${DS.viajes}/query`, 'POST', {
     filter: {
-      and: [
-        { property: 'Email cliente', email: { equals: email.trim().toLowerCase() } },
-        { property: 'App activa', checkbox: { equals: true } },
-      ]
+      property: 'App activa',
+      checkbox: { equals: true }
     }
   });
+
   if (!data.results?.length) return null;
-  const page = data.results[0];
-  const p = page.properties;
+  
+  // Buscar el viaje que coincide con el email
+  const match = data.results.find(page => {
+    const emailProp = getProp(page.properties, 'Email cliente');
+    return emailProp && emailProp.trim().toLowerCase() === emailClean;
+  });
+
+  if (!match) return null;
+  
+  const p = match.properties;
   return {
-    id:           page.id,
+    id:           match.id,
     nombre:       getProp(p, 'Nombre del viaje'),
     cliente:      getProp(p, 'Cliente'),
     slug:         getProp(p, 'Slug'),
@@ -132,43 +143,22 @@ export default async function handler(req, res) {
 
   try {
     switch (action) {
-
-      // Diagnóstico — verificar token y acceso
-      case 'ping': {
-        const token = process.env.NOTION_TOKEN;
-        const tokenPreview = token ? `${token.substring(0, 10)}...` : 'NO TOKEN';
-        try {
-          const db = await notionRequest(`/databases/${DS.viajes}`);
-          return res.status(200).json({
-            ok: true,
-            tokenPreview,
-            dbTitle: db.title?.[0]?.plain_text || 'sin título',
-            dbId: DS.viajes,
-          });
-        } catch(e) {
-          return res.status(200).json({ ok: false, tokenPreview, error: e.message });
-        }
-      }
-
       case 'getViaje': {
         if (!email) return res.status(400).json({ error: 'Email requerido' });
         const viaje = await getViajeByEmail(email);
         if (!viaje) return res.status(404).json({ error: 'no_encontrado' });
         return res.status(200).json(viaje);
       }
-
       case 'getCiudades': {
         if (!ciudadesIds?.length) return res.status(200).json([]);
         const ciudades = await getCiudades(ciudadesIds);
         return res.status(200).json(ciudades);
       }
-
       case 'getVouchers': {
         if (!vouchersIds?.length) return res.status(200).json([]);
         const vouchers = await getVouchers(vouchersIds);
         return res.status(200).json(vouchers);
       }
-
       default:
         return res.status(400).json({ error: 'Acción no reconocida' });
     }
