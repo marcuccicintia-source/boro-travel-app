@@ -52,8 +52,6 @@ function getProp(props, name) {
 async function getViajeByEmail(email) {
   const emailClean = email.trim().toLowerCase();
 
-  console.log("EMAIL INGRESADO EN APP:", emailClean);
-
   const data = await notionRequest(`/databases/${DS.viajes}/query`, 'POST', {
     filter: {
       property: 'App activa',
@@ -61,59 +59,31 @@ async function getViajeByEmail(email) {
     }
   });
 
-  if (!data.results?.length) {
-    console.log("No hay viajes con App activa = true");
-    return null;
-  }
+  if (!data.results?.length) return null;
 
-  // Mostrar qué está trayendo Notion
-  const viajesDebug = data.results.map(page => ({
-    cliente: getProp(page.properties, 'Cliente'),
-    email: getProp(page.properties, 'Email Cliente'),
-    appActiva: getProp(page.properties, 'App activa')
-  }));
-
-  console.log("VIAJES ENCONTRADOS EN NOTION:");
-  console.log(JSON.stringify(viajesDebug, null, 2));
-
-  // Buscar coincidencia exacta
   const match = data.results.find(page => {
     const emailProp = getProp(page.properties, 'Email Cliente');
-
-    console.log(
-      "Comparando:",
-      emailProp?.trim().toLowerCase(),
-      "vs",
-      emailClean
-    );
-
-    return emailProp &&
-      emailProp.trim().toLowerCase() === emailClean;
+    return emailProp && emailProp.trim().toLowerCase() === emailClean;
   });
 
-  if (!match) {
-    console.log("NO SE ENCONTRÓ MATCH DE EMAIL");
-    return null;
-  }
-
-  console.log("MATCH ENCONTRADO:", getProp(match.properties, 'Cliente'));
+  if (!match) return null;
 
   const p = match.properties;
-
   return {
-    id: match.id,
-    nombre: getProp(p, 'Nombre del viaje'),
-    cliente: getProp(p, 'Cliente'),
-    slug: getProp(p, 'Slug'),
-    fechaSalida: getProp(p, 'Fecha de salida'),
+    id:           match.id,
+    nombre:       getProp(p, 'Nombre del viaje'),
+    cliente:      getProp(p, 'Cliente'),
+    slug:         getProp(p, 'Slug'),
+    fechaSalida:  getProp(p, 'Fecha de salida'),
     fechaRegreso: getProp(p, 'Fecha de regreso'),
-    aerolinea: getProp(p, 'Aerolínea'),
-    vueloIda: getProp(p, 'Vuelo de ida'),
+    aerolinea:    getProp(p, 'Aerolínea'),
+    vueloIda:     getProp(p, 'Vuelo de ida'),
     vueloRegreso: getProp(p, 'Vuelo de regreso'),
-    traslados: getProp(p, 'Traslados'),
-    ciudadesIds: getProp(p, 'Ciudades') || [],
+    traslados:    getProp(p, 'Traslados'),
+    ciudadesIds:  getProp(p, 'Ciudades') || [],
   };
 }
+
 async function getCiudades(ids) {
   if (!ids.length) return [];
   const results = await Promise.all(ids.map(id => notionRequest(`/pages/${id}`)));
