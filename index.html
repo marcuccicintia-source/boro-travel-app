@@ -278,15 +278,15 @@
           <div class="nav-card-title">Mi itinerario</div>
           <div class="nav-card-sub">Ciudades y detalle</div>
         </div>
-        <div class="nav-card" onclick="showToast('Vouchers en cada ciudad ↓')">
+        <div class="nav-card" onclick="showScreen('vouchers')">
           <span class="nav-card-icon">🎫</span>
           <div class="nav-card-title">Vouchers</div>
-          <div class="nav-card-sub">En cada destino</div>
+          <div class="nav-card-sub">Todos tus documentos</div>
         </div>
-        <div class="nav-card" onclick="showToast('Excursiones · próximamente')">
+        <div class="nav-card" onclick="showScreen('excursiones')">
           <span class="nav-card-icon">🧭</span>
           <div class="nav-card-title">Excursiones</div>
-          <div class="nav-card-sub">Opcionales y contratadas</div>
+          <div class="nav-card-sub">Actividades incluidas</div>
         </div>
         <div class="nav-card" onclick="showScreen('contacto')">
           <span class="nav-card-icon">💬</span>
@@ -306,6 +306,7 @@
   <nav class="bottom-nav">
     <button class="nav-tab active" onclick="switchTab(this,'dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Inicio</span></button>
     <button class="nav-tab" onclick="switchTab(this,'miviaje')"><span class="tab-icon">🗺️</span><span class="tab-label">Mi viaje</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'vouchers')"><span class="tab-icon">🎫</span><span class="tab-label">Vouchers</span></button>
     <button class="nav-tab" onclick="switchTab(this,'contacto')"><span class="tab-icon">💬</span><span class="tab-label">Contacto</span></button>
   </nav>
 </div>
@@ -325,7 +326,48 @@
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="switchTab(this,'dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Inicio</span></button>
     <button class="nav-tab active" onclick="switchTab(this,'miviaje')"><span class="tab-icon">🗺️</span><span class="tab-label">Mi viaje</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'vouchers')"><span class="tab-icon">🎫</span><span class="tab-label">Vouchers</span></button>
     <button class="nav-tab" onclick="switchTab(this,'contacto')"><span class="tab-icon">💬</span><span class="tab-label">Contacto</span></button>
+  </nav>
+</div>
+
+<!-- VOUCHERS -->
+<div id="vouchers" class="screen">
+  <div class="page-scroll">
+    <div class="top-bar">
+      <div class="page-title">Tus <em>vouchers</em></div>
+      <div class="page-subtitle" id="vouchersSubtitle">Todos los documentos de tu viaje</div>
+    </div>
+    <div id="vouchersList" style="padding:20px 24px;">
+      <div style="color:var(--muted);font-size:13px;">Cargando vouchers...</div>
+    </div>
+    <div class="nav-spacer"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="switchTab(this,'dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Inicio</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'miviaje')"><span class="tab-icon">🗺️</span><span class="tab-label">Mi viaje</span></button>
+    <button class="nav-tab active" onclick="switchTab(this,'vouchers')"><span class="tab-icon">🎫</span><span class="tab-label">Vouchers</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'contacto')"><span class="tab-icon">💬</span><span class="tab-label">Contacto</span></button>
+  </nav>
+</div>
+
+<!-- EXCURSIONES -->
+<div id="excursiones" class="screen">
+  <div class="page-scroll">
+    <div class="top-bar">
+      <div class="page-title">Tus <em>excursiones</em></div>
+      <div class="page-subtitle">Actividades y salidas incluidas</div>
+    </div>
+    <div id="excursionesList" style="padding:20px 24px;">
+      <div style="color:var(--muted);font-size:13px;">Cargando excursiones...</div>
+    </div>
+    <div class="nav-spacer"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-tab" onclick="switchTab(this,'dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Inicio</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'miviaje')"><span class="tab-icon">🗺️</span><span class="tab-label">Mi viaje</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'vouchers')"><span class="tab-icon">🎫</span><span class="tab-label">Vouchers</span></button>
+    <button class="nav-tab active" onclick="switchTab(this,'contacto')"><span class="tab-icon">💬</span><span class="tab-label">Contacto</span></button>
   </nav>
 </div>
 
@@ -363,6 +405,7 @@
   <nav class="bottom-nav">
     <button class="nav-tab" onclick="switchTab(this,'dashboard')"><span class="tab-icon">🏠</span><span class="tab-label">Inicio</span></button>
     <button class="nav-tab" onclick="switchTab(this,'miviaje')"><span class="tab-icon">🗺️</span><span class="tab-label">Mi viaje</span></button>
+    <button class="nav-tab" onclick="switchTab(this,'vouchers')"><span class="tab-icon">🎫</span><span class="tab-label">Vouchers</span></button>
     <button class="nav-tab active" onclick="switchTab(this,'contacto')"><span class="tab-icon">💬</span><span class="tab-label">Contacto</span></button>
   </nav>
 </div>
@@ -453,7 +496,16 @@ async function iniciarAcceso() {
       for (const ciudad of ciudades) {
         ciudad.vouchers = await cargarVouchers(ciudad.vouchersIds || []);
       }
+      // Cargar excursiones de todas las ciudades
+      showLoader('Cargando excursiones...');
+      for (const ciudad of ciudades) {
+        ciudad.excursiones = ciudad.excursionesIds?.length
+          ? await apiCall('getExcursiones', { excursionesIds: ciudad.excursionesIds })
+          : [];
+      }
       renderCiudades(ciudades, viaje);
+      renderVouchersGlobal(ciudades);
+      renderExcursionesGlobal(ciudades);
     }
 
     hideLoader();
@@ -467,12 +519,43 @@ async function iniciarAcceso() {
 function mostrarDashboard(viaje) {
   document.getElementById('greetingName').innerHTML = `Hola, <em>${viaje.cliente || 'viajero'}</em> ✈️`;
   document.getElementById('tripName').textContent = viaje.nombre || 'Mi viaje';
-  document.getElementById('flightMain').textContent = `Vuelo de ida · ${viaje.aerolinea || ''}`;
-  document.getElementById('flightCode').textContent = (viaje.vueloIda || '').split(' ')[0] || '–';
-  document.getElementById('flightDetail').textContent = viaje.traslados === 'Incluidos'
-    ? `Traslados incluidos · Salida ${formatFecha(viaje.fechaSalida)}`
-    : `Salida ${formatFecha(viaje.fechaSalida)}`;
+
+  // — Estado dinámico del dashboard —
+  const hoy = new Date();
+  const salida = viaje.fechaSalida ? new Date(viaje.fechaSalida + 'T00:00:00') : null;
+  const regreso = viaje.fechaRegreso ? new Date(viaje.fechaRegreso + 'T23:59:00') : null;
+
+  const esDiaDeViaje = salida && hoy >= salida && regreso && hoy <= new Date(viaje.fechaRegreso + 'T12:00:00');
+  const estaViajando = salida && hoy > salida && regreso && hoy <= regreso;
+  const ultimos2Dias = regreso && ((regreso - hoy) / 86400000) <= 2 && estaViajando;
+
+  // Strip inferior — vuelo ida o vuelta
+  const stripIcon = document.getElementById('flightIcon') || null;
+  if (estaViajando) {
+    document.getElementById('flightMain').textContent = `Vuelo de regreso · ${viaje.aerolinea || ''}`;
+    document.getElementById('flightCode').textContent = (viaje.vueloRegreso || '').split(' ')[0] || '–';
+    document.getElementById('flightDetail').textContent = `Regreso ${formatFecha(viaje.fechaRegreso)}`;
+    const fi = document.querySelector('.flight-icon');
+    if (fi) fi.textContent = '🛬';
+  } else {
+    document.getElementById('flightMain').textContent = `Vuelo de ida · ${viaje.aerolinea || ''}`;
+    document.getElementById('flightCode').textContent = (viaje.vueloIda || '').split(' ')[0] || '–';
+    document.getElementById('flightDetail').textContent = viaje.traslados === 'Incluidos'
+      ? `Traslados incluidos · Salida ${formatFecha(viaje.fechaSalida)}`
+      : `Salida ${formatFecha(viaje.fechaSalida)}`;
+  }
+
   document.getElementById('tripDates').innerHTML = `Salida <span>${formatFecha(viaje.fechaSalida)}</span> · Regreso <span>${formatFecha(viaje.fechaRegreso)}</span>`;
+
+  // Countdown vs mensaje especial
+  const cdHero = document.querySelector('.countdown-hero');
+  if (esDiaDeViaje) {
+    document.querySelector('.countdown-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:12px 0;"><span style="font-family:var(--font-display);font-size:38px;color:var(--gold);font-style:italic;">¡Hoy viajás! ✈️</span></div>`;
+  } else if (ultimos2Dias) {
+    document.querySelector('.countdown-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:12px 0;"><span style="font-family:var(--font-display);font-size:28px;color:var(--gold);font-style:italic;">Últimos días 🌅</span><div style="font-size:13px;color:var(--muted);margin-top:8px;">¡Aprovechalos al máximo!</div></div>`;
+  } else if (salida) {
+    iniciarCountdown(new Date(viaje.fechaSalida + 'T07:30:00-03:00'));
+  }
 
   const partsTitle = (viaje.nombre || 'Mi viaje').split(' ');
   document.getElementById('viajeTitle').innerHTML = partsTitle.length > 1
@@ -480,7 +563,6 @@ function mostrarDashboard(viaje) {
     : `<em>${viaje.nombre}</em>`;
   document.getElementById('viajeSubtitle').textContent = `${formatFecha(viaje.fechaSalida)} → ${formatFecha(viaje.fechaRegreso)} · ${viaje.aerolinea || ''}`;
 
-  if (viaje.fechaSalida) iniciarCountdown(new Date(viaje.fechaSalida + 'T07:30:00-03:00'));
   showScreen('dashboard');
 }
 
@@ -493,7 +575,7 @@ function iconoParaCiudad(nombre) {
   for (const [key,val] of Object.entries(ICONOS)) { if (k.includes(key)) return val; }
   return '🏙️';
 }
-const TIPO_ICONO = {'Vuelo':'✈️','Hotel':'🏨','Traslado':'🚌','Excursión':'🎭','Otro':'📄'};
+const TIPO_ICONO = {'Vuelo':'✈️','Hotel':'🏨','Traslado':'🚌','Alquiler de auto':'🚗','Excursión':'🎭','Otro':'📄'};
 
 function renderCiudades(ciudades, viaje) {
   ciudades.sort((a,b) => (a.orden||0) - (b.orden||0));
@@ -566,6 +648,8 @@ function renderCiudades(ciudades, viaje) {
           ${c.checkIn ? `<div class="info-row"><div class="info-icon">🕐</div><div class="info-text"><div class="info-label">Check in / Check out</div><div class="info-value">Entrada ${c.checkIn} · Salida ${c.checkOut||'10:00'}</div></div></div>` : ''}
           ${conexionHTML}
           ${c.guiaDestino ? `<div class="info-row"><div class="info-icon">📖</div><div class="info-text"><div class="info-label">Guía de destino</div><div class="info-value"><a href="${c.guiaDestino}" target="_blank">Descargar guía →</a></div></div></div>` : ''}
+          <button class="btn-info-destino" onclick="mostrarInfoDestino('${c.id}','${(c.ciudad||'').replace(/'/g,"\\'")}',this)" style="display:flex;align-items:center;gap:8px;background:rgba(200,169,110,0.08);border:1px solid var(--border);border-radius:10px;padding:11px 14px;cursor:pointer;color:var(--gold);font-size:13px;font-family:var(--font-body);width:100%;text-align:left;transition:border-color 0.2s;"><span>🌍</span> Info del destino</button>
+          <div class="info-destino-panel" id="info-${c.id}" style="display:none;"></div>
           ${vouchersHTML ? `<div><div class="info-label" style="margin-bottom:8px;">Vouchers</div><div class="voucher-list">${vouchersHTML}</div></div>` : ''}
         </div>
       </div>
@@ -650,6 +734,104 @@ function formatFecha(str) {
   const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const d = new Date(str + 'T12:00:00');
   return `${d.getDate()} ${meses[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ══════════════════════════════════
+// VOUCHERS GLOBAL
+// ══════════════════════════════════
+function renderVouchersGlobal(ciudades) {
+  const container = document.getElementById('vouchersList');
+  if (!ciudades?.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay vouchers cargados aún.</p>'; return; }
+
+  let html = '';
+  for (const ciudad of ciudades) {
+    if (!ciudad.vouchers?.length) continue;
+    html += `<div style="margin-bottom:20px;">
+      <div class="section-label" style="margin-bottom:10px;">${ciudad.ciudad || ''}</div>
+      <div class="voucher-list">
+        ${ciudad.vouchers.map(v => `
+          <a class="voucher-btn" ${v.linkVoucher ? `href="${v.linkVoucher}" target="_blank"` : `href="#" onclick="showToast('Sin link aún')"`}>
+            <div class="info-icon" style="margin:0;">${TIPO_ICONO[v.tipo]||'📄'}</div>
+            <div>
+              <div class="voucher-type">${v.tipo||''}</div>
+              <div class="voucher-name">${v.nombre||''}</div>
+              ${v.descripcion ? `<div class="voucher-detail">${v.descripcion}</div>` : ''}
+            </div>
+            <div class="voucher-icon">${v.linkVoucher ? '↗' : '·'}</div>
+          </a>`).join('')}
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html || '<p style="color:var(--muted);font-size:13px;">No hay vouchers cargados aún.</p>';
+}
+
+// ══════════════════════════════════
+// EXCURSIONES GLOBAL
+// ══════════════════════════════════
+function renderExcursionesGlobal(ciudades) {
+  const container = document.getElementById('excursionesList');
+  if (!ciudades?.length) { container.innerHTML = '<p style="color:var(--muted);font-size:13px;">No hay excursiones cargadas aún.</p>'; return; }
+
+  let html = '';
+  for (const ciudad of ciudades) {
+    if (!ciudad.excursiones?.length) continue;
+    html += `<div style="margin-bottom:20px;">
+      <div class="section-label" style="margin-bottom:10px;">${ciudad.ciudad || ''}</div>
+      ${ciudad.excursiones.map(e => `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:14px;font-weight:400;color:var(--ivory);">${e.nombre||'Excursión'}</div>
+            ${e.incluida ? '<span style="font-size:9px;letter-spacing:0.1em;color:var(--gold);background:rgba(200,169,110,0.1);border-radius:20px;padding:3px 8px;font-family:var(--font-label);">INCLUIDA</span>' : ''}
+          </div>
+          ${e.fecha ? `<div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📅 ${formatFecha(e.fecha)}</div>` : ''}
+          ${e.descripcion ? `<div style="font-size:12px;color:var(--muted);line-height:1.6;">${e.descripcion}</div>` : ''}
+          ${e.linkVoucher ? `<a href="${e.linkVoucher}" target="_blank" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--gold);">Ver voucher →</a>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+  container.innerHTML = html || '<p style="color:var(--muted);font-size:13px;">No hay excursiones cargadas aún.</p>';
+}
+
+// ══════════════════════════════════
+// INFO DE DESTINO
+// ══════════════════════════════════
+async function mostrarInfoDestino(pageId, nombreCiudad, btn) {
+  const panel = document.getElementById('info-' + pageId);
+  if (!panel) return;
+
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    btn.innerHTML = '<span>🌍</span> Info del destino';
+    return;
+  }
+
+  btn.innerHTML = '<span>⏳</span> Cargando info...';
+  btn.disabled = true;
+
+  try {
+    const res = await apiCall('getInfoDestino', { pageId });
+    const bloques = res?.info;
+
+    if (!bloques?.length) {
+      panel.innerHTML = `<div style="padding:14px;background:var(--surface3);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.7;">La info de destino para <strong style="color:var(--ivory)">${nombreCiudad}</strong> está siendo preparada. ¡Pronto la tenés disponible!</div>`;
+    } else {
+      panel.innerHTML = `<div style="background:var(--surface3);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        ${bloques.map(b => b.type === 'heading'
+          ? `<div style="font-family:var(--font-display);font-size:16px;color:var(--gold);font-weight:400;margin-top:6px;">${b.text}</div>`
+          : `<div style="font-size:12px;color:var(--ivory);line-height:1.7;opacity:0.85;">${b.text}</div>`
+        ).join('')}
+      </div>`;
+    }
+
+    panel.style.display = 'block';
+    btn.innerHTML = '<span>🌍</span> Ocultar info';
+    btn.disabled = false;
+  } catch(e) {
+    panel.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--muted);">No se pudo cargar la info del destino.</div>`;
+    panel.style.display = 'block';
+    btn.innerHTML = '<span>🌍</span> Info del destino';
+    btn.disabled = false;
+  }
 }
 
 function iniciarCountdown(target) {
