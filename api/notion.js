@@ -109,6 +109,7 @@ async function getCiudades(ids) {
       fotoPortada:      getProp(p, 'Foto portada'),
       guiaDestino:      getProp(p, 'Guía de destino'),
       vouchersIds:      getProp(p, 'Vouchers') || [],
+      excursionesIds:   getProp(p, 'Excursiones') || [],
     };
   }).sort((a, b) => a.orden - b.orden);
 }
@@ -135,14 +136,17 @@ async function getExcursiones(ids) {
   return results.map(page => {
     const p = page.properties;
     return {
-      id:          page.id,
-      nombre:      getProp(p, 'Nombre'),
-      descripcion: getProp(p, 'Descripción'),
-      fecha:       getProp(p, 'Fecha'),
-      precio:      getProp(p, 'Precio'),
-      incluida:    getProp(p, 'Incluida'),
-      linkVoucher: getProp(p, 'Link voucher'),
-      orden:       getProp(p, 'Orden') ?? 99,
+      id:           page.id,
+      nombre:       getProp(p, 'Nombre'),
+      descripcion:  getProp(p, 'Descripción'),
+      horario:      getProp(p, 'Horario'),
+      duracion:     getProp(p, 'Duración'),
+      estado:       getProp(p, 'Estado'),           // "Contratada" / "Opcional"
+      precio:       getProp(p, 'Precio por persona'),
+      moneda:       getProp(p, 'Moneda'),
+      queLlevar:    getProp(p, 'Qué llevar'),
+      linkVoucher:  getProp(p, 'Voucher'),
+      orden:        getProp(p, 'Orden') ?? 99,
     };
   }).sort((a, b) => a.orden - b.orden);
 }
