@@ -129,6 +129,50 @@ async function getVouchers(ids) {
   }).sort((a, b) => a.orden - b.orden);
 }
 
+async function getExcursiones(ids) {
+  if (!ids.length) return [];
+  const results = await Promise.all(ids.map(id => notionRequest(`/pages/${id}`)));
+  return results.map(page => {
+    const p = page.properties;
+    return {
+      id:          page.id,
+      nombre:      getProp(p, 'Nombre'),
+      descripcion: getProp(p, 'Descripción'),
+      fecha:       getProp(p, 'Fecha'),
+      precio:      getProp(p, 'Precio'),
+      incluida:    getProp(p, 'Incluida'),
+      linkVoucher: getProp(p, 'Link voucher'),
+      orden:       getProp(p, 'Orden') ?? 99,
+    };
+  }).sort((a, b) => a.orden - b.orden);
+}
+
+async function getInfoDestino(pageId) {
+  // Lee el body de la página de ciudad para obtener la info de destino
+  try {
+    const blocks = await notionRequest(`/blocks/${pageId}/children?page_size=100`);
+    if (!blocks?.results?.length) return null;
+
+    const lines = [];
+    for (const block of blocks.results) {
+      const type = block.type;
+      const rich = block[type]?.rich_text || [];
+      const text = rich.map(t => t.plain_text).join('');
+      if (!text.trim()) continue;
+
+      // Solo incluir bloques que son info de destino (no el checklist de vouchers)
+      if (type === 'heading_2' || type === 'heading_3') {
+        lines.push({ type: 'heading', text });
+      } else if (type === 'paragraph' || type === 'bulleted_list_item') {
+        lines.push({ type: 'text', text });
+      }
+    }
+    return lines.length > 0 ? lines : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -136,7 +180,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { action, email, ciudadesIds, vouchersIds } = req.body || {};
+  const { action, email, ciudadesIds, vouchersIds, excursionesIds, pageId } = req.body || {};
 
   try {
     switch (action) {
@@ -155,6 +199,18 @@ export default async function handler(req, res) {
         if (!vouchersIds?.length) return res.status(200).json([]);
         const vouchers = await getVouchers(vouchersIds);
         return res.status(200).json(vouchers);
+      }
+      case 'getExcursiones': {
+        const { excursionesIds } = req.body || {};
+        if (!excursionesIds?.length) return res.status(200).json([]);
+        const excursiones = await getExcursiones(excursionesIds);
+        return res.status(200).json(excursiones);
+      }
+      case 'getInfoDestino': {
+        const { pageId } = req.body || {};
+        if (!pageId) return res.status(400).json({ error: 'pageId requerido' });
+        const info = await getInfoDestino(pageId);
+        return res.status(200).json({ info });
       }
       default:
         return res.status(400).json({ error: 'Acción no reconocida' });
